@@ -139,17 +139,24 @@ class VarsomAlertsCoordinator(DataUpdateCoordinator):
                 test_alert = {
                     "Id": 999999,
                     "ActivityLevel": "3",  # Orange
-                    "DangerLevel": "Moderate",
-                    "MainText": "Test Alert - Orange Landslide Warning for Testville",
+                    "DangerLevel": "Moderate", 
+                    "DangerTypeName": "Jordskred",
+                    "MainText": "Test Alert - Orange Landslide Warning for Testville", 
+                    "WarningText": "Det er moderat fare for jordskred i Testville kommune. Væte og temperaturendringer kan utløse skred i bratte skråninger.",
+                    "AdviceText": "Unngå opphold under bratte fjellsider og i skredfarlige områder. Vær særlig oppmerksom ved ferdsel i terrenget.",
+                    "ConsequenceText": "Jordskred kan medføre skade på infrastruktur og fare for liv og helse. Mindre veier kan bli stengt.",
+                    "EmergencyWarning": "Test emergency warning text for Testville landslide alert",
                     "LangKey": 2,
                     "ValidFrom": "2025-12-16T00:00:00",
-                    "ValidTo": "2025-12-17T23:59:59",
+                    "ValidTo": "2025-12-17T23:59:59", 
                     "NextWarningTime": "2025-12-17T08:00:00",
                     "PublishTime": "2025-12-16T08:00:00",
+                    "DangerIncreaseDateTime": "2025-12-16T12:00:00",
+                    "DangerDecreaseDateTime": "2025-12-17T06:00:00",
                     "Author": "Test System",
                     "MunicipalityList": [
                         {
-                            "Id": "9999",
+                            "Id": "9999", 
                             "Name": "Testville",
                             "CountyId": "46",
                             "CountyName": "Vestland"
