@@ -226,10 +226,10 @@ class VarsomAlertsSensor(CoordinatorEntity, SensorEntity):
         # Apply municipality filter if this is the filtered sensor
         data_to_use = self._filter_alerts(self.coordinator.data) if self._use_filter else self.coordinator.data
         
-        # Filter out green level (1) alerts
+        # Filter out green level (1) and unknown level (0) alerts
         active_alerts = [
             alert for alert in data_to_use
-            if alert.get("ActivityLevel", "1") != "1"
+            if alert.get("ActivityLevel", "1") not in ("0", "1")
         ]
         
         if not active_alerts:
@@ -256,10 +256,10 @@ class VarsomAlertsSensor(CoordinatorEntity, SensorEntity):
         # Apply municipality filter if this is the filtered sensor
         data_to_use = self._filter_alerts(self.coordinator.data) if self._use_filter else self.coordinator.data
         
-        # Filter out green level (1) alerts
+        # Filter out green level (1) and unknown level (0) alerts
         active_alerts = [
             alert for alert in data_to_use
-            if alert.get("ActivityLevel", "1") != "1"
+            if alert.get("ActivityLevel", "1") not in ("0", "1")
         ]
         
         # Determine highest level
