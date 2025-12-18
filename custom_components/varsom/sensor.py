@@ -273,25 +273,49 @@ class VarsomAlertsCoordinator(DataUpdateCoordinator):
             
             # Fetch avalanche warnings (region-based API, filtered by county)
             if self.warning_type in [WARNING_TYPE_AVALANCHE, WARNING_TYPE_ALL]:
+                _LOGGER.info("Fetching avalanche warnings for warning_type: %s", self.warning_type)
                 avalanche_warnings = await self._fetch_avalanche_warnings("avalanche")
+                _LOGGER.info("Raw avalanche warnings fetched: %d", len(avalanche_warnings))
+                
                 # Filter avalanche warnings by county
                 county_filtered_avalanche = []
                 for warning in avalanche_warnings:
                     warning["_warning_type"] = "avalanche"
                     # Check if this avalanche warning affects the selected county
                     county_list = warning.get("CountyList", [])
+                    _LOGGER.debug("Avalanche warning %s (%s) has counties: %s", 
+                                warning.get("Id"), warning.get("RegionName"), 
+                                [f"{c.get('Id')}:{c.get('Name')}" for c in county_list])
+                    
                     for county in county_list:
                         county_id = county.get("Id")
                         # Handle both string and int county IDs
                         if str(county_id) == str(self.county_id):
                             county_filtered_avalanche.append(warning)
+                            _LOGGER.info("Including avalanche warning for %s (county match: %s)", 
+                                       warning.get("RegionName"), county.get("Name"))
                             break
                 
-                _LOGGER.info("Filtered avalanche warnings for county %s: %d out of %d", 
-                           self.county_name, len(county_filtered_avalanche), len(avalanche_warnings))
+                _LOGGER.info("Filtered avalanche warnings for county %s (%s): %d out of %d", 
+                           self.county_name, self.county_id, len(county_filtered_avalanche), len(avalanche_warnings))
+                
+                # Debug: log details of filtered warnings
+                for warning in county_filtered_avalanche:
+                    _LOGGER.info("Avalanche warning: %s - Level %s - %s", 
+                               warning.get("RegionName"), warning.get("ActivityLevel"), 
+                               warning.get("MainText", "")[:50])
+                
                 all_warnings.extend(county_filtered_avalanche)
             
             _LOGGER.info("Total warnings fetched: %d", len(all_warnings))
+            
+            # Debug: log warning types breakdown
+            warning_types = {}
+            for warning in all_warnings:
+                wtype = warning.get("_warning_type", "unknown")
+                warning_types[wtype] = warning_types.get(wtype, 0) + 1
+            _LOGGER.info("Warning types breakdown: %s", warning_types)
+            
             return all_warnings
             
         except Exception as err:
