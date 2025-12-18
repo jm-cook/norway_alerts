@@ -143,6 +143,8 @@ class VarsomAlertsCoordinator(DataUpdateCoordinator):
             # Language key: 2 = Norwegian, 1 = English  
             summary_url = f"{API_BASE_AVALANCHE}/api/RegionSummary/Simple/2/{today}/{tomorrow}"
             
+            _LOGGER.info("Attempting to fetch avalanche summary from: %s", summary_url)
+            
             async with aiohttp.ClientSession() as session:
                 # Get region summary to find active regions
                 async with session.get(summary_url) as response:

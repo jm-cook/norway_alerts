@@ -23,7 +23,7 @@ PLATFORMS = ["sensor"]
 # NVE API Base URLs
 API_BASE_LANDSLIDE = "https://api01.nve.no/hydrology/forecast/landslide/v1.0.10/api"
 API_BASE_FLOOD = "https://api01.nve.no/hydrology/forecast/flood/v1.0.10/api"
-API_BASE_AVALANCHE = "https://api01.nve.no/hydrology/forecast/avalanche/v6.3.0/api"
+API_BASE_AVALANCHE = "https://api01.nve.no/hydrology/forecast/avalanche/v6.3.0"
 
 # Warning types
 WARNING_TYPE_LANDSLIDE = "landslide"
