@@ -174,25 +174,32 @@ class AvalancheAPI(BaseWarningAPI):
                                                 municipality_list = warning.get("MunicipalityList", [])
                                                 county_list = warning.get("CountyList", [])
                                                 
-                                                # Count municipalities in target county vs total municipalities
-                                                target_county_municipalities = 0
-                                                total_municipalities = len(municipality_list)
+                                                # Check if this region has relevance to target county
+                                                # First check by county name in CountyList since CountyId is often empty
+                                                county_list = warning.get("CountyList", [])
+                                                county_names = [county.get("Name", "") for county in county_list]
+                                                is_relevant = self.county_name in county_names
                                                 
-                                                for municipality in municipality_list:
-                                                    muni_county_id = municipality.get("CountyId")
-                                                    if str(muni_county_id) == str(self.county_id):
-                                                        target_county_municipalities += 1
+                                                # If not found by county name, fall back to municipality CountyId check
+                                                if not is_relevant:
+                                                    target_county_municipalities = 0
+                                                    total_municipalities = len(municipality_list)
+                                                    
+                                                    for municipality in municipality_list:
+                                                        muni_county_id = municipality.get("CountyId")
+                                                        if str(muni_county_id) == str(self.county_id):
+                                                            target_county_municipalities += 1
+                                                    
+                                                    # Calculate relevance score (0.0 to 1.0)
+                                                    relevance_score = target_county_municipalities / total_municipalities if total_municipalities > 0 else 0
+                                                    
+                                                    # Only include regions with some relevance (>= 10% of municipalities)
+                                                    is_relevant = relevance_score >= 0.1
                                                 
-                                                # Calculate relevance score (0.0 to 1.0)
-                                                relevance_score = target_county_municipalities / total_municipalities if total_municipalities > 0 else 0
-                                                
-                                                # Only include regions with significant relevance (>= 30% of municipalities)
-                                                # This filters out regions that barely touch the county
-                                                if relevance_score >= 0.3:
+                                                if is_relevant:
                                                     region_name = warning.get("RegionName", "Unknown")
-                                                    _LOGGER.debug("Including avalanche region '%s': %d/%d municipalities in %s (%.1f%% relevance)", 
-                                                                region_name, target_county_municipalities, total_municipalities, 
-                                                                self.county_name, relevance_score * 100)
+                                                    _LOGGER.debug("Including avalanche region '%s': relevant to %s (county in region or municipalities match)", 
+                                                                region_name, self.county_name)
                                                     converted_warning = {
                                                         "Id": warning.get("RegionId"),
                                                         "ActivityLevel": str(warning.get("DangerLevel", 1)),
