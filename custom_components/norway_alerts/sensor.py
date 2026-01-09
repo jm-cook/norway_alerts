@@ -85,7 +85,8 @@ async def async_setup_entry(
             )
     else:
         # Lat/lon-based configuration (Met.no metalerts)
-        location_name = f"Location {latitude:.2f}, {longitude:.2f}"
+        # Create a descriptive location name
+        location_name = f"({latitude:.2f}, {longitude:.2f})"
         entities = [
             VarsomAlertsSensor(coordinator, entry.entry_id, location_name, warning_type, "", is_main=True),
         ]
@@ -566,8 +567,30 @@ class VarsomAlertsSensor(CoordinatorEntity, SensorEntity):
                     "entity_picture": individual_icon,  # Individual icon for each alert
                 }
                 
-                # Add avalanche-specific attributes instead of generic warning/advice/consequence text
-                if warning_type == "avalanche":
+                # Add warning-type-specific attributes
+                if warning_type == "metalerts":
+                    # Met.no weather alerts - use CAP-based fields
+                    alert_dict.update({
+                        "title": alert.get("title", ""),
+                        "event": alert.get("event", ""),
+                        "event_type": alert.get("event", "").lower().replace(" ", "_") if alert.get("event") else "",
+                        "areas": alert.get("area", "").split(", ") if alert.get("area") else [],
+                        "description": alert.get("description", ""),
+                        "instruction": alert.get("instruction", ""),
+                        "consequences": alert.get("consequences", ""),
+                        "certainty": alert.get("certainty", ""),
+                        "severity": alert.get("severity", ""),
+                        "awareness_level": alert.get("awareness_level", ""),
+                        "awareness_type": alert.get("awareness_type", ""),
+                        "contact": alert.get("contact", ""),
+                        "county": alert.get("county", []),
+                        "map_url": alert.get("map_url"),
+                        "resource_url": alert.get("resource_url", ""),
+                        "web": alert.get("web", ""),
+                    })
+                    # Override URL for Met.no alerts
+                    alert_dict["url"] = alert.get("resource_url") or "https://www.met.no/vaer-og-klima/ekstremvaervarsler-og-andre-faremeldinger"
+                elif warning_type == "avalanche":
                     alert_dict.update({
                         # Geographical data
                         "region_id": alert.get("_region_id", alert.get("RegionId")),
