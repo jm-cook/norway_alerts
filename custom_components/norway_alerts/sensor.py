@@ -52,15 +52,14 @@ async def async_setup_entry(
     async_add_entities: AddEntitiesCallback,
 ) -> None:
     """Set up Varsom Alerts sensor from a config entry."""
+    # Get coordinator from hass.data (created in __init__.py)
+    coordinator = hass.data[DOMAIN][entry.entry_id]
+    
     # Get config from entry.options (preferred) or entry.data (fallback)
-    # Options are used when user updates config, data is from initial setup
     config = entry.options if entry.options else entry.data
     
     warning_type = config.get(CONF_WARNING_TYPE) or entry.data.get(CONF_WARNING_TYPE)
-    lang = config.get(CONF_LANG) or entry.data.get(CONF_LANG, "en")
-    test_mode = config.get(CONF_TEST_MODE, False)
-    enable_notifications = config.get(CONF_ENABLE_NOTIFICATIONS, False)
-    notification_severity = config.get(CONF_NOTIFICATION_SEVERITY, NOTIFICATION_SEVERITY_YELLOW_PLUS)
+    municipality_filter = config.get(CONF_MUNICIPALITY_FILTER, "")
     
     # Determine if this is a county-based or lat/lon-based configuration
     county_id = config.get(CONF_COUNTY_ID) or entry.data.get(CONF_COUNTY_ID)
@@ -70,14 +69,6 @@ async def async_setup_entry(
     if county_id:
         # County-based configuration (NVE warnings)
         county_name = config.get(CONF_COUNTY_NAME) or entry.data.get(CONF_COUNTY_NAME, "Unknown")
-        municipality_filter = config.get(CONF_MUNICIPALITY_FILTER, "")
-        
-        coordinator = VarsomAlertsCoordinator(
-            hass, county_id, county_name, warning_type, lang, test_mode,
-            enable_notifications, notification_severity,
-            latitude=None, longitude=None
-        )
-        await coordinator.async_config_entry_first_refresh()
         
         # Create sensors
         entities = [
@@ -92,14 +83,6 @@ async def async_setup_entry(
             )
     else:
         # Lat/lon-based configuration (Met.no metalerts)
-        coordinator = VarsomAlertsCoordinator(
-            hass, None, None, warning_type, lang, test_mode,
-            enable_notifications, notification_severity,
-            latitude=latitude, longitude=longitude
-        )
-        await coordinator.async_config_entry_first_refresh()
-        
-        # Create a single sensor for metalerts
         location_name = f"Location {latitude:.2f}, {longitude:.2f}"
         entities = [
             VarsomAlertsSensor(coordinator, entry.entry_id, location_name, warning_type, "", is_main=True),
