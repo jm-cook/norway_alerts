@@ -228,7 +228,7 @@ class AvalancheAPI(BaseWarningAPI):
                                                         "MunicipalityList": warning.get("MunicipalityList", []),
                                                         "_region_id": warning.get("RegionId"),
                                                         "_region_name": warning.get("RegionName"),
-                                                        "_warning_type": "avalanche",
+                                                        "_warning_type": "avalanches",  # Plural to match icon naming
                                                         "UtmZone": warning.get("UtmZone"),
                                                         "UtmEast": warning.get("UtmEast"),
                                                         "UtmNorth": warning.get("UtmNorth"),
@@ -380,6 +380,18 @@ class MetAlertsAPI(BaseWarningAPI):
                                         break
                             
                             # Convert to Varsom warning format
+                            # Map event types for icon compatibility
+                            event_type = props.get("event", "").lower()
+                            # Handle special mappings for icons
+                            if event_type == "gale":
+                                icon_event_type = "wind"
+                            elif event_type == "icing":
+                                icon_event_type = "ice"
+                            elif event_type == "blowingsnow":
+                                icon_event_type = "snow"
+                            else:
+                                icon_event_type = event_type
+                            
                             converted_warning = {
                                 "Id": props.get("id", ""),
                                 "ActivityLevel": activity_level,
@@ -390,7 +402,7 @@ class MetAlertsAPI(BaseWarningAPI):
                                 "ValidFrom": starttime or props.get("eventEndingTime", ""),
                                 "ValidTo": endtime or props.get("eventEndingTime", ""),
                                 "PublishTime": "",  # Not provided by metalerts
-                                "_warning_type": "metalerts",
+                                "_warning_type": icon_event_type,
                                 
                                 # Metalerts-specific attributes (preserving original structure)
                                 "title": title,

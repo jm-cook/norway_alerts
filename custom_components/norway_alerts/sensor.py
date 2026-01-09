@@ -163,13 +163,22 @@ class VarsomAlertsCoordinator(DataUpdateCoordinator):
                     emergency_text = "Test emergency warning text for Testville landslide alert"
                 
                 # Create base test alert structure
+                # For metalerts, use the actual event type (wind) not the generic "metalerts"
+                # For avalanche, use plural "avalanches" to match icon naming
+                if test_warning_type == WARNING_TYPE_METALERTS:
+                    warning_type_for_icon = "wind"
+                elif test_warning_type == WARNING_TYPE_AVALANCHE:
+                    warning_type_for_icon = "avalanches"
+                else:
+                    warning_type_for_icon = test_warning_type
+                
                 test_alert = {
                     "Id": 999999,
                     "ActivityLevel": "3",  # Orange
                     "DangerLevel": "Moderate", 
                     "DangerTypeName": danger_type_name,
                     "MainText": main_text, 
-                    "_warning_type": test_warning_type
+                    "_warning_type": warning_type_for_icon
                 }
                 
                 # Add type-specific fields
@@ -594,8 +603,16 @@ class VarsomAlertsSensor(CoordinatorEntity, SensorEntity):
             else:
                 # Generate individual icon for this alert
                 level_color = ACTIVITY_LEVEL_NAMES.get(activity_level, "green")
-                icon_key = f"{warning_type}-{level_color}" if warning_type and level_color != "green" else None
-                individual_icon = ICON_DATA_URLS.get(icon_key) if icon_key else None
+                if warning_type and level_color != "green":
+                    icon_key = f"{warning_type}-{level_color}"
+                    # Try to get icon, fall back to generic if not found
+                    individual_icon = ICON_DATA_URLS.get(icon_key)
+                    if not individual_icon:
+                        generic_key = f"generic-{level_color}"
+                        individual_icon = ICON_DATA_URLS.get(generic_key)
+                        _LOGGER.debug("Icon not found for %s, using %s", icon_key, generic_key)
+                else:
+                    individual_icon = None
                 
                 # New alert - create base dict with common fields only
                 alert_dict = {
@@ -644,7 +661,7 @@ class VarsomAlertsSensor(CoordinatorEntity, SensorEntity):
                     })
                     # Override URL for Met.no alerts
                     alert_dict["url"] = alert.get("resource_url") or "https://www.met.no/vaer-og-klima/ekstremvaervarsler-og-andre-faremeldinger"
-                elif warning_type == "avalanche":
+                elif warning_type == "avalanches":
                     # Avalanche warnings - NVE specific fields
                     alert_dict.update({
                         # NVE common fields
@@ -750,4 +767,12 @@ class VarsomAlertsSensor(CoordinatorEntity, SensorEntity):
         
         # Get base64 encoded SVG from const
         icon_key = f"{warning_type}-{level_color}"
-        return ICON_DATA_URLS.get(icon_key)
+        icon = ICON_DATA_URLS.get(icon_key)
+        
+        # Fall back to generic icon if specific type not found
+        if not icon:
+            generic_key = f"generic-{level_color}"
+            icon = ICON_DATA_URLS.get(generic_key)
+            _LOGGER.debug("Icon not found for %s, using %s", icon_key, generic_key)
+        
+        return icon
