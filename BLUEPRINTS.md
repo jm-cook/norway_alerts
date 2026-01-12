@@ -42,18 +42,18 @@ After importing the blueprint, add this to your `configuration.yaml`:
 ```yaml
 template:
   - use_blueprint:
-      path: cap_alert_markdown_sensor.yaml
+      path: jm-cook/cap_alert_markdown_sensor.yaml # relative to config/blueprints/template/
       input:
-        alert_sensor: sensor.norway_alerts_metalerts_vestland  # Change to your alert sensor
-        sensor_name: cap_alerts_formatted
+        alert_sensor: sensor.weather_alerts_home
         show_icon: true
         show_status: true
         show_map: true
+    name: weather_alerts_home_formatted
+    unique_id: weather_alerts_home_formatted
 ```
 
 **Configuration options:**
 - **alert_sensor**: Your Norway Alerts sensor entity ID (required)
-- **sensor_name**: Name for the new formatted sensor (default: `cap_alerts_formatted`)
 - **show_icon**: Display warning icons next to titles (default: `true`)
 - **show_status**: Show Expected/Ongoing/Ended status (default: `true`)
 - **show_map**: Display alert maps when available (default: `true`)

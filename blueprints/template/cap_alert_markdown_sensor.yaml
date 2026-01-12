@@ -9,12 +9,6 @@ blueprint:
       selector:
         entity:
           domain: sensor
-    sensor_name:
-      name: Sensor Name
-      description: Name for the formatted sensor (will appear as sensor.{name})
-      default: "cap_alerts_formatted"
-      selector:
-        text:
     show_icon:
       name: Show Alert Icons
       description: Display warning icons next to alert titles
@@ -34,19 +28,18 @@ blueprint:
       selector:
         boolean:
 
-template:
-  - sensor:
-      - name: !input sensor_name
-        unique_id: !input sensor_name
-        state: "{{ state_attr('!input alert_sensor', 'active_alerts') | int(0) }}"
-        attributes:
-          formatted_content: >
-            {% set sensor_entity = '!input alert_sensor' %}
-            {% set alerts = state_attr(sensor_entity, 'alerts') %}
-            {% set show_icon = !input show_icon %}
-            {% set show_status = !input show_status %}
-            {% set show_map = !input show_map %}
-            
+variables:
+  alert_sensor: !input alert_sensor
+  show_icon: !input show_icon
+  show_status: !input show_status
+  show_map: !input show_map
+
+sensor:
+    state: >
+      {{ state_attr(alert_sensor, 'active_alerts') | int(0) }}
+    attributes:
+      formatted_content: >
+        {% set alerts = state_attr(alert_sensor, 'alerts') %}
             {% if alerts and alerts | length > 0 %}
               {% for alert in alerts %}
                 {% set start_ts = as_timestamp(alert.starttime) %}
@@ -55,42 +48,45 @@ template:
                 
             ### {% if show_icon and alert.entity_picture %}<img src="{{ alert.entity_picture }}" width="32" style="vertical-align: middle;">{% endif %} {{ alert.title }}
                 
-            {% if show_status %}
-            **Status**: {{ '⏰ Expected' if start_ts > now_ts else ('✅ Ended' if end_ts < now_ts else '⚠️ Ongoing') }}
-            {% endif %}
+        {% if show_status %}
+        **Status**: {{ '⏰ Expected' if start_ts > now_ts else ('✅ Ended' if end_ts < now_ts else '⚠️ Ongoing') }}
+        {% endif %}
                 
-            **Severity**: {{ alert.awareness_level_color | upper }}
-                
-            **Type**: {{ alert.event_awareness_name }}
-                
-            **Valid Period**: {{ start_ts | timestamp_custom('%B %d, %H:%M') }} to {{ end_ts | timestamp_custom('%B %d, %H:%M') }}
-                
-            #### Description
-            {{ alert.description }}
-                
-            {% if alert.instruction %}
-            #### Instructions
-            {{ alert.instruction }}
-            {% endif %}
-                
-            {% if alert.consequences %}
-            #### Consequences
-            {{ alert.consequences }}
-            {% endif %}
-                
-            {% if alert.area %}
-            **Area**: {{ alert.area }}
-            {% endif %}
-                
-            **Certainty**: {{ alert.certainty }} | **Severity**: {{ alert.severity }}
+        **Severity**: {{ alert.awareness_level_color | upper }}
             
-            ---
+        **Type**: {{ alert.event_awareness_name }}
+            
+        **Valid Period**: {{ start_ts | timestamp_custom('%B %d, %H:%M') }} to {{ end_ts | timestamp_custom('%B %d, %H:%M') }}
+            
+        #### Description
+        
+        {{ alert.description }}
+            
+        {% if alert.instruction %}
+        #### Instructions
+        
+        {{ alert.instruction }}
+        {% endif %}
+            
+        {% if alert.consequences %}
+        #### Consequences
+        
+        {{ alert.consequences }}
+        {% endif %}
+            
+        {% if alert.area %}
+        **Area**: {{ alert.area }}
+        {% endif %}
+            
+        **Certainty**: {{ alert.certainty }} | **Severity**: {{ alert.severity }}
+        
+        ---
+            
+        {% if show_map and alert.map_url %}
+        <img src="{{ alert.map_url }}" width="400">
+        {% endif %}
                 
-            {% if show_map and alert.map_url %}
-            <img src="{{ alert.map_url }}" width="400">
-            {% endif %}
-                
-              {% endfor %}
-            {% else %}
-            No active alerts
-            {% endif %}
+        {% endfor %}
+        {% else %}
+        No active alerts
+        {% endif %}
