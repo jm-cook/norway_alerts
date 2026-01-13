@@ -112,10 +112,7 @@ class TestNorwayAlertsSensor:
                 county_name="Vestland",
                 warning_type=WARNING_TYPE_LANDSLIDE,
                 lang="en",
-                county_name="Vestland",
-            warning_type=WARNING_TYPE_LANDSLIDE,
-            lang="en",
-        )
+            )
         
         # Mock coordinator data - it returns a list of alerts
         coordinator.data = [{"ActivityLevel": "2", "Id": 123}]
@@ -140,9 +137,6 @@ class TestNorwayAlertsSensor:
                 county_name="Vestland",
                 warning_type=WARNING_TYPE_LANDSLIDE,
                 lang="en",
-                county_name="Vestland",
-            warning_type=WARNING_TYPE_LANDSLIDE,
-            lang="en",
         )
         
         # Mock coordinator data with no alerts (empty list)
