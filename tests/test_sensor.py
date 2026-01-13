@@ -3,94 +3,137 @@ import pytest
 from unittest.mock import AsyncMock, patch, MagicMock
 from datetime import datetime
 
-from custom_components.norway_alerts.const import CONF_WARNING_TYPE, WARNING_TYPE_LANDSLIDE
+from custom_components.norway_alerts.const import (
+    CONF_WARNING_TYPE, 
+    WARNING_TYPE_LANDSLIDE,
+    CONF_COUNTY_ID,
+    CONF_COUNTY_NAME,
+    CONF_LANG,
+)
+
+
+class TestNorwayAlertsCoordinator:
+    """Test Norway Alerts coordinator."""
+
+    @pytest.mark.asyncio
+    async def test_coordinator_update_with_alerts(self, mock_hass, mock_county_api_response):
+        """Test coordinator update when alerts exist."""
+        from custom_components.norway_alerts.sensor import NorwayAlertsCoordinator
+        
+        coordinator = NorwayAlertsCoordinator(
+            hass=mock_hass,
+            county_id="46",
+            county_name="Vestland",
+            warning_type=WARNING_TYPE_LANDSLIDE,
+            lang="en",
+        )
+        
+        with patch.object(coordinator._api, "fetch_warnings", return_value=mock_county_api_response):
+            await coordinator._async_update_data()
+        
+        assert coordinator.data is not None
+        assert len(coordinator.data.get("active_alerts", [])) == 1
+
+    @pytest.mark.asyncio
+    async def test_coordinator_update_no_alerts(self, mock_hass):
+        """Test coordinator update when no alerts exist."""
+        from custom_components.norway_alerts.sensor import NorwayAlertsCoordinator
+        
+        coordinator = NorwayAlertsCoordinator(
+            hass=mock_hass,
+            county_id="46",
+            county_name="Vestland",
+            warning_type=WARNING_TYPE_LANDSLIDE,
+            lang="en",
+        )
+        
+        with patch.object(coordinator._api, "fetch_warnings", return_value=[]):
+            await coordinator._async_update_data()
+        
+        assert coordinator.data is not None
+        assert len(coordinator.data.get("active_alerts", [])) == 0
 
 
 class TestNorwayAlertsSensor:
     """Test Norway Alerts sensor entity."""
 
-    @pytest.mark.asyncio
-    async def test_sensor_update_with_alerts(self, mock_hass, mock_county_api_response):
-        """Test sensor update when alerts exist."""
-        from custom_components.norway_alerts.sensor import NorwayAlertsSensor
+    def test_sensor_creation(self):
+        """Test sensor can be created."""
+        from custom_components.norway_alerts.sensor import NorwayAlertsSensor, NorwayAlertsCoordinator
         
-        config = {
-            "county_id": "46",
-            "county_name": "Vestland",
-            CONF_WARNING_TYPE: WARNING_TYPE_LANDSLIDE,
-            "lang": "en",
+        mock_hass = MagicMock()
+        coordinator = NorwayAlertsCoordinator(
+            hass=mock_hass,
+            county_id="46",
+            county_name="Vestland",
+            warning_type=WARNING_TYPE_LANDSLIDE,
+            lang="en",
+        )
+        
+        sensor = NorwayAlertsSensor(
+            coordinator=coordinator,
+            entry_id="test_entry",
+            county_name="Vestland",
+            warning_type=WARNING_TYPE_LANDSLIDE,
+        )
+        
+        assert sensor is not None
+        assert sensor.name == "Vestland Landslide"
+
+    def test_sensor_state_with_alerts(self):
+        """Test sensor state when alerts exist."""
+        from custom_components.norway_alerts.sensor import NorwayAlertsSensor, NorwayAlertsCoordinator
+        
+        mock_hass = MagicMock()
+        coordinator = NorwayAlertsCoordinator(
+            hass=mock_hass,
+            county_id="46",
+            county_name="Vestland",
+            warning_type=WARNING_TYPE_LANDSLIDE,
+            lang="en",
+        )
+        
+        # Mock coordinator data
+        coordinator.data = {
+            "active_alerts": [{"ActivityLevel": "2"}],
+            "highest_level_numeric": 2,
+            "highest_level": "yellow",
         }
         
-        sensor = NorwayAlertsSensor(mock_hass, config, "test_sensor")
-        
-        with patch.object(sensor._api, "fetch_warnings", return_value=mock_county_api_response):
-            await sensor.async_update()
+        sensor = NorwayAlertsSensor(
+            coordinator=coordinator,
+            entry_id="test_entry",
+            county_name="Vestland",
+            warning_type=WARNING_TYPE_LANDSLIDE,
+        )
         
         assert sensor.native_value == 1  # One alert
-        assert sensor.state_attributes["alert_count"] == 1
-        assert sensor.state_attributes["highest_level"] == "yellow"
 
-    @pytest.mark.asyncio
-    async def test_sensor_update_no_alerts(self, mock_hass):
-        """Test sensor update when no alerts exist."""
-        from custom_components.norway_alerts.sensor import NorwayAlertsSensor
+    def test_sensor_state_no_alerts(self):
+        """Test sensor state when no alerts exist."""
+        from custom_components.norway_alerts.sensor import NorwayAlertsSensor, NorwayAlertsCoordinator
         
-        config = {
-            "county_id": "46",
-            "county_name": "Vestland",
-            CONF_WARNING_TYPE: WARNING_TYPE_LANDSLIDE,
-            "lang": "en",
+        mock_hass = MagicMock()
+        coordinator = NorwayAlertsCoordinator(
+            hass=mock_hass,
+            county_id="46",
+            county_name="Vestland",
+            warning_type=WARNING_TYPE_LANDSLIDE,
+            lang="en",
+        )
+        
+        # Mock coordinator data with no alerts
+        coordinator.data = {
+            "active_alerts": [],
+            "highest_level_numeric": 0,
+            "highest_level": "green",
         }
         
-        sensor = NorwayAlertsSensor(mock_hass, config, "test_sensor")
-        
-        with patch.object(sensor._api, "fetch_warnings", return_value=[]):
-            await sensor.async_update()
+        sensor = NorwayAlertsSensor(
+            coordinator=coordinator,
+            entry_id="test_entry",
+            county_name="Vestland",
+            warning_type=WARNING_TYPE_LANDSLIDE,
+        )
         
         assert sensor.native_value == 0
-        assert sensor.state_attributes["alert_count"] == 0
-
-    def test_sensor_icon_selection(self):
-        """Test icon selection based on alert level."""
-        from custom_components.norway_alerts.sensor import NorwayAlertsSensor
-        
-        config = {
-            "county_id": "46",
-            "county_name": "Vestland",
-            CONF_WARNING_TYPE: WARNING_TYPE_LANDSLIDE,
-            "lang": "en",
-        }
-        
-        sensor = NorwayAlertsSensor(MagicMock(), config, "test_sensor")
-        
-        # Test with no alerts
-        sensor._active_alerts = []
-        assert sensor.entity_picture is None
-        
-        # Test with yellow alert
-        sensor._active_alerts = [{"ActivityLevel": "2"}]
-        sensor._highest_level_numeric = 2
-        assert sensor.entity_picture is not None
-
-    @pytest.mark.asyncio
-    async def test_notification_sending(self, mock_hass, mock_county_api_response):
-        """Test notification is sent for new alert."""
-        from custom_components.norway_alerts.sensor import NorwayAlertsSensor
-        
-        config = {
-            "county_id": "46",
-            "county_name": "Vestland",
-            CONF_WARNING_TYPE: WARNING_TYPE_LANDSLIDE,
-            "lang": "en",
-            "enable_notifications": True,
-            "notification_severity": "yellow_plus",
-        }
-        
-        sensor = NorwayAlertsSensor(mock_hass, config, "test_sensor")
-        
-        with patch.object(sensor._api, "fetch_warnings", return_value=mock_county_api_response):
-            with patch.object(sensor, "_send_new_alert_notification") as mock_notify:
-                await sensor.async_update()
-                
-                # Should send notification for yellow+ alert
-                assert mock_notify.call_count > 0

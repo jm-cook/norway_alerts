@@ -39,6 +39,9 @@ class TestConfigFlow:
         flow = NorwayAlertsConfigFlow()
         flow.hass = mock_hass
         
+        # Initialize the flow to set up context properly
+        await flow.async_step_user()
+        
         with patch("custom_components.norway_alerts.config_flow.validate_api_connection", return_value=True):
             result = await flow.async_step_user({
                 CONF_NAME: "Test Alerts",
@@ -57,12 +60,17 @@ class TestConfigFlow:
         from custom_components.norway_alerts.config_flow import NorwayAlertsOptionsFlow
         
         config_entry = MagicMock()
+        config_entry.entry_id = "test_entry"
         config_entry.data = {
             CONF_NAME: "Test Alerts",
             CONF_COUNTY_ID: "46",
             CONF_COUNTY_NAME: "Vestland",
             CONF_WARNING_TYPE: WARNING_TYPE_LANDSLIDE,
         }
+        config_entry.options = {}
+        
+        mock_hass.config_entries = MagicMock()
+        mock_hass.config_entries.async_update_entry = AsyncMock()
         
         flow = NorwayAlertsOptionsFlow(config_entry)
         flow.hass = mock_hass
