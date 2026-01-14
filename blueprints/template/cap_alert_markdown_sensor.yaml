@@ -46,4 +46,60 @@ sensor:
     unique_id: "{{ sensor_name }}"
     state: "{{ state_attr(alert_sensor, 'active_alerts') | int(0) }}"
     attributes:
-      formatted_content: "{% set alerts = state_attr(alert_sensor, 'alerts') %}\n{% if alerts and alerts | length > 0 %}\n{% for alert in alerts %}\n{% set start_ts = as_timestamp(alert.starttime) %}\n{% set end_ts = as_timestamp(alert.endtime) %}\n{% set now_ts = now().timestamp() %}\n\n<table role=\"grid\" cellspacing=\"0\" cellpadding=\"0\" border=\"0\"><tr height=\"32\"><td rowspan=\"2\" valign=\"middle\" width=\"70\">{% if show_icon and alert.entity_picture %}<img src=\"{{ alert.entity_picture }}\" width=\"64\" height=\"64\">{% endif %}</td><td valign=\"middle\" height=\"32\"><font size=\"3\"><strong>{% if show_status %}{{ 'Expected' if start_ts > now_ts else ('Ended' if end_ts < now_ts else 'Ongoing') }} - {% endif %}{{ alert.title }}</strong></font></td></tr><tr height=\"24\"><td valign=\"top\" height=\"24\">{{ alert.awareness_level_color}} severity</td></tr></table>\n\n**Type**: {{ alert.event_awareness_name }}\n\n#### Time period\n\n🔵 {{ start_ts | timestamp_custom('%A, %d %B kl. %H:%M', true) }} - increasing danger\n\n🔵 {{ end_ts | timestamp_custom('%A, %d %B kl. %H:%M', true) }} - decreasing danger\n\n#### Description\n\n{{ alert.description }}\n\n{% if alert.instruction %}\n#### Instructions\n\n{{ alert.instruction }}\n{% endif %}\n\n{% if alert.consequences %}\n#### Consequences\n\n{{ alert.consequences }}\n{% endif %}\n\n{% if alert.area %}\n**Area**: {{ alert.area }}\n{% endif %}\n\n**Certainty**: {{ alert.certainty }} | **Severity**: {{ alert.severity }}\n\n---\n\n{% if show_map and alert.map_url %}\n<img src=\"{{ alert.map_url }}\" width=\"400\">\n{% endif %}\n\n{% endfor %}\n{% else %}\nNo active alerts\n{% endif %}"
+      formatted_content: "{% set alerts = state_attr(alert_sensor, 'alerts') %}\n\
+        {% if alerts and alerts | length > 0 %}\n\
+        {% for alert in alerts %}\n\
+        {% set start_ts = as_timestamp(alert.starttime) %}\n\
+        {% set end_ts = as_timestamp(alert.endtime) %}\n\
+        {% set now_ts = now().timestamp() %}\n\
+        \n\
+        <table role=\"grid\" cellspacing=\"0\" cellpadding=\"0\" border=\"0\">\
+        <tr height=\"32\">\
+        <td rowspan=\"2\" valign=\"middle\" width=\"70\">{% if show_icon and alert.entity_picture %}<img src=\"{{ alert.entity_picture }}\" width=\"64\" height=\"64\">{% endif %}</td>\
+        <td valign=\"middle\" height=\"32\"><font size=\"3\"><strong>{% if show_status %}{{ 'Expected' if start_ts > now_ts else ('Ended' if end_ts < now_ts else 'Ongoing') }} - {% endif %}{{ alert.title }}</strong></font></td>\
+        </tr>\
+        <tr height=\"24\">\
+        <td valign=\"top\" height=\"24\">{{ alert.awareness_level_color}} severity</td>\
+        </tr>\
+        </table>\n\
+        \n\
+        **Type**: {{ alert.event_awareness_name }}\n\
+        \n\
+        #### Time period\n\
+        \n\
+        🔵 {{ start_ts | timestamp_custom('%A, %d %B kl. %H:%M', true) }} - increasing danger\n\
+        \n\
+        🔵 {{ end_ts | timestamp_custom('%A, %d %B kl. %H:%M', true) }} - decreasing danger\n\
+        \n\
+        #### Description\n\
+        \n\
+        {{ alert.description }}\n\
+        \n\
+        {% if alert.instruction %}\n\
+        #### Instructions\n\
+        \n\
+        {{ alert.instruction }}\n\
+        {% endif %}\n\
+        \n\
+        {% if alert.consequences %}\n\
+        #### Consequences\n\
+        \n\
+        {{ alert.consequences }}\n\
+        {% endif %}\n\
+        \n\
+        {% if alert.area %}\n\
+        **Area**: {{ alert.area }}\n\
+        {% endif %}\n\
+        \n\
+        **Certainty**: {{ alert.certainty }} | **Severity**: {{ alert.severity }}\n\
+        \n\
+        ---\n\
+        \n\
+        {% if show_map and alert.map_url %}\n\
+        <img src=\"{{ alert.map_url }}\" width=\"400\">\n\
+        {% endif %}\n\
+        \n\
+        {% endfor %}\n\
+        {% else %}\n\
+        No active alerts\n\
+        {% endif %}"
