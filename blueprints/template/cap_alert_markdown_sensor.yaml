@@ -48,11 +48,11 @@ sensor:
       formatted_content: |-
         {% set alerts = state_attr(alert_sensor, 'alerts') %}
         {% if alerts and alerts | length > 0 %}
-          {% for alert in alerts %}
-            {% set start_ts = as_timestamp(alert.starttime) %}
-            {% set end_ts = as_timestamp(alert.endtime) %}
-            {% set now_ts = now().timestamp() %}
-            
+        {% for alert in alerts %}
+        {% set start_ts = as_timestamp(alert.starttime) %}
+        {% set end_ts = as_timestamp(alert.endtime) %}
+        {% set now_ts = now().timestamp() %}
+        
         <table role="grid" cellspacing="0" cellpadding="0" border="0">
         <tr height="32">
         <td rowspan="2" valign="middle" width="70">{% if show_icon and alert.entity_picture %}<img src="{{ alert.entity_picture }}" width="64" height="64">{% endif %}</td>
@@ -98,8 +98,8 @@ sensor:
         {% if show_map and alert.map_url %}
         <img src="{{ alert.map_url }}" width="400">
         {% endif %}
-            
-          {% endfor %}
+        
+        {% endfor %}
         {% else %}
         No active alerts
         {% endif %}
