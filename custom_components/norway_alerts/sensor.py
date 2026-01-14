@@ -110,8 +110,6 @@ def convert_nve_to_cap(alert: dict, warning_type: str, lang: str) -> dict:
         # Timing
         "starttime": alert.get("ValidFrom", ""),
         "endtime": alert.get("ValidTo", ""),
-        "valid_from": alert.get("ValidFrom", ""),
-        "valid_to": alert.get("ValidTo", ""),
         
         # Event information
         "event": event,
@@ -861,8 +859,6 @@ class NorwayAlertsSensor(CoordinatorEntity, SensorEntity):
                         "level_name": ACTIVITY_LEVEL_NAMES.get(activity_level, "unknown"),
                         "danger_type": alert.get("DangerTypeName", ""),
                         "warning_type": alert.get("_warning_type", "unknown"),
-                        "valid_from": alert.get("ValidFrom", ""),
-                        "valid_to": alert.get("ValidTo", ""),
                         "main_text": alert.get("MainText", ""),
                         "entity_picture": individual_icon,
                     }
@@ -880,8 +876,8 @@ class NorwayAlertsSensor(CoordinatorEntity, SensorEntity):
         # Convert dict back to list
         alerts_list = list(alerts_dict.values())
         
-        # Sort by level (highest first), then by valid_from
-        alerts_list.sort(key=lambda x: (x["level"], x.get("valid_from", "")), reverse=True)
+        # Sort by level (highest first), then by starttime
+        alerts_list.sort(key=lambda x: (x["level"], x.get("starttime", "")), reverse=True)
         
         result = {
             "active_alerts": len(alerts_list),

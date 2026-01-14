@@ -48,53 +48,59 @@ sensor:
     attributes:
       formatted_content: >
         {% set alerts = state_attr(alert_sensor, 'alerts') %}
-            {% if alerts and alerts | length > 0 %}
-              {% for alert in alerts %}
-                {% set start_ts = as_timestamp(alert.starttime) %}
-                {% set end_ts = as_timestamp(alert.endtime) %}
-                {% set now_ts = now().timestamp() %}
-                
-            ### {% if show_icon and alert.entity_picture %}<img src="{{ alert.entity_picture }}" width="32" style="vertical-align: middle;">{% endif %} {{ alert.title }}
-                
-        {% if show_status %}
-        **Status**: {{ '⏰ Expected' if start_ts > now_ts else ('✅ Ended' if end_ts < now_ts else '⚠️ Ongoing') }}
-        {% endif %}
-                
-        **Severity**: {{ alert.awareness_level_color | upper }}
+        {% if alerts and alerts | length > 0 %}
+          {% for alert in alerts %}
+            {% set start_ts = as_timestamp(alert.starttime) %}
+            {% set end_ts = as_timestamp(alert.endtime) %}
+            {% set now_ts = now().timestamp() %}
             
+        <table role="grid" cellspacing="0" cellpadding="0" border="0">
+        <tr height="32">
+        <td rowspan="2" valign="middle" width="70">{% if show_icon and alert.entity_picture %}<img src="{{ alert.entity_picture }}" width="64" height="64">{% endif %}</td>
+        <td valign="middle" height="32"><font size="3"><strong>{% if show_status %}{{ 'Expected' if start_ts > now_ts else ('Ended' if end_ts < now_ts else 'Ongoing') }} - {% endif %}{{ alert.title }}</strong></font></td>
+        </tr>
+        <tr height="24">
+        <td valign="top" height="24">{{ alert.awareness_level_color}} severity</td>
+        </tr>
+        </table>
+        
         **Type**: {{ alert.event_awareness_name }}
-            
-        **Valid Period**: {{ start_ts | timestamp_custom('%B %d, %H:%M') }} to {{ end_ts | timestamp_custom('%B %d, %H:%M') }}
-            
+        
+        #### Time period
+        
+        🔵 {{ start_ts | timestamp_custom('%A, %d %B kl. %H:%M', true) }} - increasing danger
+        
+        🔵 {{ end_ts | timestamp_custom('%A, %d %B kl. %H:%M', true) }} - decreasing danger
+        
         #### Description
         
         {{ alert.description }}
-            
+        
         {% if alert.instruction %}
         #### Instructions
         
         {{ alert.instruction }}
         {% endif %}
-            
+        
         {% if alert.consequences %}
         #### Consequences
         
         {{ alert.consequences }}
         {% endif %}
-            
+        
         {% if alert.area %}
         **Area**: {{ alert.area }}
         {% endif %}
-            
+        
         **Certainty**: {{ alert.certainty }} | **Severity**: {{ alert.severity }}
         
         ---
-            
+        
         {% if show_map and alert.map_url %}
         <img src="{{ alert.map_url }}" width="400">
         {% endif %}
-                
-        {% endfor %}
+            
+          {% endfor %}
         {% else %}
         No active alerts
         {% endif %}
