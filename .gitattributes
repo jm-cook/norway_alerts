@@ -1,0 +1,12 @@
+# Ensure YAML files always use LF line endings
+*.yaml text eol=lf
+*.yml text eol=lf
+
+# Python files
+*.py text eol=lf
+
+# Markdown files
+*.md text eol=lf
+
+# JSON files
+*.json text eol=lf
