@@ -46,7 +46,7 @@ sensor:
     state: >
       {{ state_attr(alert_sensor, 'active_alerts') | int(0) }}
     attributes:
-      formatted_content: >
+      formatted_content: >-
         {% set alerts = state_attr(alert_sensor, 'alerts') %}
         {% if alerts and alerts | length > 0 %}
           {% for alert in alerts %}
