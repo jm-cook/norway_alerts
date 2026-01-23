@@ -5,10 +5,10 @@
     "@jm-cook"
   ],
   "config_flow": true,
-  "documentation": "https://github.com/jm-cook/norway_alerts",
+  "documentation": "https://github.com/DTekNO/norway_alerts",
   "integration_type": "service",
   "iot_class": "cloud_polling",
-  "issue_tracker": "https://github.com/jm-cook/norway_alerts/issues",
+  "issue_tracker": "https://github.com/DTekNO/norway_alerts/issues",
   "requirements": [],
   "version": "2.1.0"
 }

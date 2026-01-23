@@ -1,34 +1,10 @@
 # Norway Alerts - Home Assistant Integration
 
-[![hacs_badge](https://img.shields.io/badge/HACS-Custom-orange.svg)](https://github.com/jm-cook/norway_alerts)
-[![Validate with HACS](https://github.com/jm-cook/norway_alerts/actions/workflows/validate.yaml/badge.svg)](https://github.com/jm-cook/norway_alerts/actions/workflows/validate.yaml)
-[![Hassfest](https://github.com/jm-cook/norway_alerts/actions/workflows/hassfest.yaml/badge.svg)](https://github.com/jm-cook/norway_alerts/actions/workflows/hassfest.yaml)
-[![GitHub Release](https://img.shields.io/github/release/jm-cook/norway_alerts.svg)](https://github.com/jm-cook/norway_alerts/releases)
+[![hacs_badge](https://img.shields.io/badge/HACS-Custom-orange.svg)](https://github.com/DTekNO/norway_alerts)
+[![Validate with HACS](https://github.com/DTekNO/norway_alerts/actions/workflows/validate.yaml/badge.svg)](https://github.com/DTekNO/norway_alerts/actions/workflows/validate.yaml)
+[![Hassfest](https://github.com/DTekNO/norway_alerts/actions/workflows/hassfest.yaml/badge.svg)](https://github.com/DTekNO/norway_alerts/actions/workflows/hassfest.yaml)
+[![GitHub Release](https://img.shields.io/github/release/DTekNO/norway_alerts.svg)](https://github.com/DTekNO/norway_alerts/releases)
 ![Project Maintenance](https://img.shields.io/maintenance/yes/2026.svg)
-
-## ⚠️ Breaking Changes in Version 2.0.0
-
-**Version 2.0.0 introduces breaking changes that require migration:**
-
-- **Integration renamed**: `varsom` → `norway_alerts`
-- **Domain changed**: All entity IDs will change from `sensor.varsom_*` to `sensor.norway_alerts_*`
-- **New warning types**: Met.no weather alerts now available alongside NVE geohazard warnings
-- **Architecture change**: One sensor per warning type (previously supported multiple types per sensor)
-
-**Migration Steps:**
-1. Remove the old `varsom` integration completely from **Settings → Devices & Services**
-2. Delete any automations or dashboards referencing old `sensor.varsom_*` entities
-3. Install `norway_alerts` integration (via HACS or manually)
-4. Add integration for each warning type you want to monitor
-5. Update automations and dashboards with new entity IDs
-
-**What's New:**
-- Met.no weather alerts integration (CAP-formatted data)
-- Improved configuration flow with conditional fields
-- Better county support (updated for 2024 Norwegian administrative structure)
-- Enhanced attribute structure with warning-type-specific fields
-
----
 
 A comprehensive Home Assistant custom integration that provides Norwegian weather and geohazard warnings from multiple official sources:
 - **Landslide, Flood, and Avalanche warnings** from NVE (Norwegian Water Resources and Energy Directorate)
@@ -84,7 +60,7 @@ All warnings unified in a clean, modern Home Assistant interface with automatic 
    - Open HACS in Home Assistant
    - Click the three dots (⋮) in the top right
    - Select "Custom repositories"
-   - Add repository URL: `https://github.com/jm-cook/norway_alerts`
+   - Add repository URL: `https://github.com/DTekNO/norway_alerts`
    - Category: Integration
    - Click "Add"
 
@@ -248,12 +224,25 @@ The sensor state represents the **highest activity level** from all active warni
 
 ### Attributes
 
-#### Geohazard Warnings (Landslide, Flood, Avalanche)
+#### Common Attributes (All Warning Types)
+
+All sensors provide the following core attributes:
 
 ```yaml
-active_alerts: 2
-highest_level: "yellow"
-highest_level_numeric: 2
+active_alerts: 2          # Number of active alerts
+highest_level: "yellow"   # Color name of highest severity
+highest_level_numeric: 2  # Numeric level (1-4 or 1-5 for avalanche)
+formatted_content: "..."  # Formatted markdown for display (see Display Content section)
+alerts: [...]             # Array of alert objects (see below)
+```
+
+> **⚠️ Recorder Exclusion Recommended**: The `alerts` and `formatted_content` attributes can be quite large and may cause database bloat and log warnings. It's recommended to exclude these from the recorder. See [Recorder Configuration](#recorder-configuration) below.
+
+#### Geohazard Warnings (Landslide, Flood, Avalanche)
+
+Additional attributes specific to NVE warnings:
+
+```yaml
 county_name: "Vestland"
 county_id: "46"
 municipality_filter: null  # or "Bergen, Stord" if filtered
@@ -281,10 +270,9 @@ alerts:
 
 #### Met.no Weather Alerts
 
+Additional attributes specific to Met.no alerts:
+
 ```yaml
-active_alerts: 1
-highest_level: "orange"
-highest_level_numeric: 3
 latitude: 59.9139
 longitude: 10.7522
 alerts:
@@ -364,6 +352,93 @@ To override with your own icons:
 
 ---
 
+## Display Content
+
+### Formatted Content Attribute
+
+The integration automatically generates formatted markdown content in the `formatted_content` attribute using a built-in Jinja2 template, ready to display in markdown cards without any additional template logic.
+
+> **Note**: The `formatted_content` attribute is only available for **CAP-formatted alerts**:
+> - Weather alerts (Met.no) - always in CAP format
+> - NVE warnings (landslide, flood, avalanche) - only when "Enable CAP format" is checked during configuration
+> 
+> Non-CAP NVE sensors will not have this attribute. Create your own template sensor for those cases, or enable CAP formatting.
+
+#### Customization
+
+The `formatted_content` attribute provides a ready-to-use display format. If you need different formatting, you can create your own template sensor using the `alerts` attribute - see the [Markdown Card with Custom Template](#markdown-card-with-custom-template) example below.
+
+#### Configuration Options
+
+You can customize what's included in the formatted content via **Settings** → **Devices & Services** → **Norway Alerts** → **Configure**:
+
+- **Show Icon** (`show_icon`): Include warning icons in the formatted output (default: `true`)
+- **Show Status** (`show_status`): Show "Expected", "Ongoing", or "Ended" status for each alert (default: `true`)
+- **Show Map** (`show_map`): Include alert map images (default: `true`)
+
+These options are passed to the template and control which elements appear in the output.
+
+#### Usage Example
+
+Display alerts directly in a markdown card:
+
+```yaml
+type: markdown
+content: >
+  {{ state_attr('sensor.norway_alerts_landslide_vestland', 'formatted_content') }}
+```
+
+That's it! No complex templates needed. The integration handles all the formatting, including:
+- Alert status (Expected/Ongoing/Ended)
+- Warning icons (if enabled)
+- Severity levels with color codes
+- Time periods with danger increase/decrease times
+- Descriptions, instructions, and consequences
+- Affected areas
+- Map images (if enabled)
+
+---
+
+## Recorder Configuration
+
+### Large Attributes Warning
+
+The `alerts` and `formatted_content` attributes can be quite large (especially with multiple active alerts) and may cause:
+- Database bloat
+- Log warnings about entity size
+- Slower recorder performance
+
+Unfortunately, Home Assistant's recorder does not support excluding specific attributes - you can only exclude entire entities.
+
+**Recommended approaches:**
+
+1. **Exclude sensors from recorder** - Alert data is most valuable in real-time, not historically:
+   ```yaml
+   recorder:
+     exclude:
+       entity_globs:
+         - sensor.norway_alerts_*
+   ```
+   **Pros**: Eliminates database bloat and log warnings entirely  
+   **Cons**: No history graphs for alert levels (rarely needed for alerts)  
+   **Note**: All real-time data, automations, and dashboards work perfectly
+
+2. **Live with it** - Keep sensors in recorder despite large attributes:
+   - The warnings are informational only
+   - As long as you have disk space, no action needed
+   - Useful if you want historical graphs of alert levels
+
+3. **Shorter purge interval** - Keep sensors but limit history:
+   ```yaml
+   recorder:
+     purge_keep_days: 3  # Instead of default 10
+   ```
+   Reduces database growth while maintaining some history
+
+> **Note**: Excluding from recorder only affects historical storage. All attributes remain available in real-time via `state_attr()`, dashboard cards, and automations.
+
+---
+
 ## Dashboard Examples
 
 The integration works with all standard Home Assistant cards and custom cards from HACS.
@@ -384,7 +459,17 @@ entities:
     name: Vestland Alert Level
 ```
 
-#### Markdown Card with Alert Details
+#### Markdown Card with Formatted Content
+
+```yaml
+type: markdown
+content: >
+  {{ state_attr('sensor.norway_alerts_landslide_vestland', 'formatted_content') }}
+```
+
+#### Markdown Card with Custom Template
+
+If you want full control over the display, you can still use custom templates:
 
 ```yaml
 type: markdown
@@ -686,8 +771,8 @@ The warning icons are licensed under CC BY 4.0 by Yr/NRK.
 
 ## Support
 
-- **Issues**: https://github.com/jm-cook/norway_alerts/issues
-- **Discussions**: https://github.com/jm-cook/norway_alerts/discussions
+- **Issues**: https://github.com/DTekNO/norway_alerts/issues
+- **Discussions**: https://github.com/DTekNO/norway_alerts/discussions
 - **Documentation**: This README and linked guides
 
 ---

@@ -28,6 +28,9 @@ from .const import (
     CONF_ENABLE_NOTIFICATIONS,
     CONF_NOTIFICATION_SEVERITY,
     CONF_METALERTS_LOCATION_MODE,
+    CONF_SHOW_ICON,
+    CONF_SHOW_STATUS,
+    CONF_SHOW_MAP,
     API_BASE_LANDSLIDE,
     API_BASE_AVALANCHE,
     COUNTIES,
@@ -412,11 +415,25 @@ class NorwayAlertsOptionsFlow(config_entries.OptionsFlow):
             schema_dict[vol.Required(CONF_LATITUDE, default=current_latitude)] = cv.latitude
             schema_dict[vol.Required(CONF_LONGITUDE, default=current_longitude)] = cv.longitude
         
+        # Get current display formatting options (defaults to True for new configs)
+        current_show_icon = self.config_entry.options.get(
+            CONF_SHOW_ICON, self.config_entry.data.get(CONF_SHOW_ICON, True)
+        )
+        current_show_status = self.config_entry.options.get(
+            CONF_SHOW_STATUS, self.config_entry.data.get(CONF_SHOW_STATUS, True)
+        )
+        current_show_map = self.config_entry.options.get(
+            CONF_SHOW_MAP, self.config_entry.data.get(CONF_SHOW_MAP, True)
+        )
+        
         schema_dict.update({
             vol.Optional(CONF_LANG, default=current_lang): vol.In(["no", "en"]),
             vol.Optional(CONF_TEST_MODE, default=current_test_mode): cv.boolean,
             vol.Optional(CONF_ENABLE_NOTIFICATIONS, default=current_enable_notifications): cv.boolean,
             vol.Optional(CONF_NOTIFICATION_SEVERITY, default=current_notification_severity): vol.In(NOTIFICATION_SEVERITIES),
+            vol.Optional(CONF_SHOW_ICON, default=current_show_icon): cv.boolean,
+            vol.Optional(CONF_SHOW_STATUS, default=current_show_status): cv.boolean,
+            vol.Optional(CONF_SHOW_MAP, default=current_show_map): cv.boolean,
         })
         
         # Only show CAP format option for NVE warnings (not for MetAlerts which are always CAP)

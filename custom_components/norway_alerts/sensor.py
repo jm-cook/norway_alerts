@@ -1,8 +1,10 @@
 """Norway Alerts sensor platform."""
 import logging
 from datetime import timedelta
+import os
 
 import voluptuous as vol
+from jinja2 import Environment, FileSystemLoader
 
 from homeassistant.components.sensor import SensorEntity
 from homeassistant.config_entries import ConfigEntry
@@ -29,6 +31,9 @@ from .const import (
     CONF_CAP_FORMAT,
     CONF_ENABLE_NOTIFICATIONS,
     CONF_NOTIFICATION_SEVERITY,
+    CONF_SHOW_ICON,
+    CONF_SHOW_STATUS,
+    CONF_SHOW_MAP,
     WARNING_TYPE_LANDSLIDE,
     WARNING_TYPE_FLOOD,
     WARNING_TYPE_AVALANCHE,
@@ -241,7 +246,7 @@ class NorwayAlertsCoordinator(DataUpdateCoordinator):
 
     def __init__(self, hass, county_id, county_name, warning_type, lang, test_mode=False, 
                  enable_notifications=False, notification_severity=NOTIFICATION_SEVERITY_YELLOW_PLUS,
-                 cap_format=True, latitude=None, longitude=None):
+                 cap_format=True, latitude=None, longitude=None, config_entry=None):
         """Initialize coordinator."""
         super().__init__(
             hass,
@@ -259,6 +264,7 @@ class NorwayAlertsCoordinator(DataUpdateCoordinator):
         self.notification_severity = notification_severity
         self.latitude = latitude
         self.longitude = longitude
+        self.config_entry = config_entry  # Store config entry for device info
         self.previous_alerts = {}  # Track previous alerts for change detection
 
     # Old _fetch_warnings method removed - replaced by API classes
@@ -720,6 +726,85 @@ class NorwayAlertsSensor(CoordinatorEntity, SensorEntity):
         _LOGGER.info("Filtered to %d alerts matching '%s'", len(filtered), self._municipality_filter)
         return filtered
 
+    def _generate_formatted_content(self, alerts):
+        """Generate markdown-formatted content for display using Jinja2 template.
+        
+        Only generates content for CAP-formatted alerts (weather alerts or NVE with CAP enabled).
+        Returns None for non-CAP sensors.
+        """
+        from datetime import datetime
+        
+        # Only generate formatted content for CAP format sensors
+        if not self.coordinator.cap_format:
+            return None
+        
+        # Get display options from config entry
+        show_icon = self.coordinator.config_entry.options.get(CONF_SHOW_ICON, True)
+        show_status = self.coordinator.config_entry.options.get(CONF_SHOW_STATUS, True)
+        show_map = self.coordinator.config_entry.options.get(CONF_SHOW_MAP, True)
+        
+        # Enrich alerts with computed fields for template
+        enriched_alerts = []
+        for alert in alerts:
+            enriched = dict(alert)
+            
+            # Parse timestamps
+            starttime = alert.get("starttime", "")
+            endtime = alert.get("endtime", "")
+            if starttime and endtime:
+                try:
+                    start_dt = datetime.fromisoformat(starttime.replace("Z", "+00:00"))
+                    end_dt = datetime.fromisoformat(endtime.replace("Z", "+00:00"))
+                    enriched["starttime_timestamp"] = start_dt.timestamp()
+                    enriched["endtime_timestamp"] = end_dt.timestamp()
+                    enriched["start_formatted"] = start_dt.strftime("%A, %d %B kl. %H:%M")
+                    enriched["end_formatted"] = end_dt.strftime("%A, %d %B kl. %H:%M")
+                except (ValueError, AttributeError):
+                    pass
+            
+            # Handle area with municipality fallback
+            if not enriched.get("area") and alert.get("municipalities"):
+                municipalities = alert["municipalities"][:5]
+                area = ", ".join(municipalities)
+                if len(alert["municipalities"]) > 5:
+                    area += f" (+{len(alert['municipalities']) - 5} more)"
+                enriched["area"] = area
+            
+            enriched_alerts.append(enriched)
+        
+        # Load and render template
+        template_dir = os.path.join(os.path.dirname(__file__), "templates")
+        env = Environment(loader=FileSystemLoader(template_dir))
+        template = env.get_template("formatted_content.j2")
+        
+        return template.render(
+            alerts=enriched_alerts,
+            show_icon=show_icon,
+            show_status=show_status,
+            show_map=show_map,
+            now_timestamp=datetime.now().timestamp()
+        )
+
+    @property
+    def device_info(self):
+        """Return device information about this sensor."""
+        # Create a device name based on location
+        if self.coordinator.county_name:
+            device_name = f"Norway Alerts - {self.coordinator.county_name}"
+        else:
+            device_name = "Norway Alerts - Weather"
+        
+        # Create a model name based on warning type
+        warning_type_label = self._warning_type.replace("_", " ").title()
+        
+        return {
+            "identifiers": {(DOMAIN, self.coordinator.config_entry.entry_id)},
+            "name": device_name,
+            "manufacturer": "NVE / Met.no",
+            "model": warning_type_label,
+            "entry_type": "service",
+        }
+
     @property
     def native_value(self):
         """Return the state of the sensor (number of active alerts)."""
@@ -884,6 +969,7 @@ class NorwayAlertsSensor(CoordinatorEntity, SensorEntity):
             "highest_level": ACTIVITY_LEVEL_NAMES.get(str(max_level), "green"),
             "highest_level_numeric": max_level,
             "alerts": alerts_list,
+            "formatted_content": self._generate_formatted_content(alerts_list),
         }
         
         # Add location-specific attributes

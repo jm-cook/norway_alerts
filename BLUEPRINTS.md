@@ -25,13 +25,13 @@ This blueprint creates a template sensor that formats your Norway Alerts (or any
 2. Click the **Import Blueprint** button (bottom right)
 3. Enter this URL:
    ```
-   https://github.com/jm-cook/norway_alerts/blob/main/blueprints/template/cap_alert_markdown_sensor.yaml
+   https://github.com/DTekNO/norway_alerts/blob/main/blueprints/template/cap_alert_markdown_sensor.yaml
    ```
 4. Click **Preview Blueprint** then **Import Blueprint**
 
 #### Method 2: Manual Installation
 
-1. Download [cap_alert_markdown_sensor.yaml](https://github.com/jm-cook/norway_alerts/blob/main/blueprints/template/cap_alert_markdown_sensor.yaml)
+1. Download [cap_alert_markdown_sensor.yaml](https://github.com/DTekNO/norway_alerts/blob/main/blueprints/template/cap_alert_markdown_sensor.yaml)
 2. Copy it to your Home Assistant `config/blueprints/template/` folder
 3. Restart Home Assistant (if needed)
 

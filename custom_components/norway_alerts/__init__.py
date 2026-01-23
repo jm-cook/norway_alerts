@@ -56,7 +56,7 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
         coordinator = NorwayAlertsCoordinator(
             hass, county_id, county_name, warning_type, lang, test_mode,
             enable_notifications, notification_severity, cap_format,
-            latitude=None, longitude=None
+            latitude=None, longitude=None, config_entry=entry
         )
     else:
         # Lat/lon-based configuration (Met.no metalerts)
@@ -64,7 +64,7 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
         coordinator = NorwayAlertsCoordinator(
             hass, None, None, warning_type, lang, test_mode,
             enable_notifications, notification_severity, cap_format,
-            latitude=latitude, longitude=longitude
+            latitude=latitude, longitude=longitude, config_entry=entry
         )
     
     # Do the first refresh before setting up platforms

@@ -1,0 +1,60 @@
+{% if alerts and alerts | length > 0 %}
+{% for alert in alerts %}
+{% set start_ts = alert.get('starttime_timestamp') %}
+{% set end_ts = alert.get('endtime_timestamp') %}
+{% set now_ts = now_timestamp %}
+
+<table role="presentation">
+<tr height="32">
+<td rowspan="2" width="70">{% if show_icon and alert.get('entity_picture') %}<img src="{{ alert.entity_picture }}" width="64" height="64">{% endif %}</td>
+<td height="32"><font size="3"><strong>{% if show_status and start_ts and end_ts %}{{ 'Expected' if start_ts > now_ts else ('Ended' if end_ts < now_ts else 'Ongoing') }} - {% endif %}{{ alert.get('event', 'Alert') }}</strong></font></td>
+</tr>
+<tr height="24">
+<td height="24">{{ alert.get('severity', 'unknown') | capitalize }} severity</td>
+</tr>
+</table>
+
+{% if start_ts and end_ts %}
+#### Time period
+
+🔵 {{ alert.start_formatted }} - increasing danger
+
+🔵 {{ alert.end_formatted }} - decreasing danger
+
+{% endif %}
+{% if alert.get('description') %}
+#### Description
+
+{{ alert.description }}
+
+{% endif %}
+{% if alert.get('instruction') %}
+#### Instructions
+
+{{ alert.instruction }}
+
+{% endif %}
+{% if alert.get('consequences') %}
+#### Consequences
+
+{{ alert.consequences }}
+
+{% endif %}
+{% if alert.get('area') %}
+**Area**: {{ alert.area }}
+
+{% endif %}
+{% if alert.get('certainty') or alert.get('severity') or alert.get('level_name') %}
+{% if alert.get('certainty') %}**Certainty**: {{ alert.certainty }}{% endif %}{% if alert.get('certainty') and (alert.get('severity') or alert.get('level_name')) %} | {% endif %}{% if alert.get('severity') or alert.get('level_name') %}**Severity**: {{ alert.get('severity', alert.get('level_name', '')) }}{% endif %}
+
+{% endif %}
+---
+
+{% if show_map and alert.get('map_url') %}
+<img src="{{ alert.map_url }}" width="400">
+
+{% endif %}
+{% endfor %}
+{% else %}
+No active alerts
+{% endif %}

@@ -25,6 +25,11 @@ CONF_NOTIFICATION_SEVERITY = "notification_severity"
 CONF_METALERTS_LOCATION_MODE = "metalerts_location_mode"
 CONF_CAP_FORMAT = "cap_format"
 
+# Display formatting options (for formatted_content attribute)
+CONF_SHOW_ICON = "show_icon"
+CONF_SHOW_STATUS = "show_status"
+CONF_SHOW_MAP = "show_map"
+
 # MetAlerts location modes
 METALERTS_MODE_LATLON = "latlon"
 METALERTS_MODE_COUNTY = "county"
