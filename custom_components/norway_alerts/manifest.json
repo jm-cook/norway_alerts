@@ -2,7 +2,7 @@
   "domain": "norway_alerts",
   "name": "Norway Alerts",
   "codeowners": [
-    "@jm-cook"
+    "@DTekNO"
   ],
   "config_flow": true,
   "documentation": "https://github.com/DTekNO/norway_alerts",
