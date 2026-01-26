@@ -19,33 +19,26 @@ from .const import (
 
 _LOGGER = logging.getLogger(__name__)
 
-# Cache version string to avoid blocking I/O on every API call
-_CACHED_VERSION = None
 
-
-def _get_version() -> str:
-    """Get version from manifest.json (cached after first read)."""
-    global _CACHED_VERSION
-    
-    if _CACHED_VERSION is not None:
-        return _CACHED_VERSION
-    
+def _load_version_from_manifest() -> str:
+    """Load version from manifest.json at module import time."""
     try:
         manifest_path = os.path.join(os.path.dirname(__file__), "manifest.json")
         with open(manifest_path, "r", encoding="utf-8") as f:
             manifest = json.load(f)
-            _CACHED_VERSION = manifest.get("version", "2.0.0")
-            return _CACHED_VERSION
+            return manifest.get("version", "2.0.0")
     except Exception as e:
         _LOGGER.warning("Could not read version from manifest.json: %s", e)
-        _CACHED_VERSION = "2.0.0"
-        return _CACHED_VERSION
+        return "2.0.0"
+
+
+# Load version at module import time (before event loop starts)
+_VERSION = _load_version_from_manifest()
 
 
 def _get_user_agent() -> str:
     """Get User-Agent string with version from manifest."""
-    version = _get_version()
-    return f"norway_alerts/{version} jeremy.m.cook@gmail.com"
+    return f"norway_alerts/{_VERSION} jeremy.m.cook@gmail.com"
 
 
 class BaseWarningAPI(ABC):
