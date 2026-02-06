@@ -456,7 +456,7 @@ Both entities are linked in the same device, making them easy to find together.
 2. Click on your location/region device
 3. Note both entity IDs (the sensor and the switch)
 
-**Note:** If you recreate entity IDs for the switch (e.g., after an update), restart Home Assistant for the sensor to recognize the new switch entity ID.
+The sensor automatically detects if the switch is renamed and re-links without requiring a restart.
 
 **Note:** Standard markdown cards do not support tap actions. To toggle the view, you'll need either a separate toggle control (shown below) or a custom card from HACS that adds tap action support.
 

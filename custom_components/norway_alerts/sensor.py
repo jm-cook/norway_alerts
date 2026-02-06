@@ -656,7 +656,30 @@ class NorwayAlertsSensor(CoordinatorEntity, SensorEntity):
         
         _LOGGER.info("Setting up compact view listener for sensor: %s", self.entity_id)
         
-        # Find the switch entity that's part of the same device
+        # Find and link the switch entity
+        self._setup_switch_listener()
+        
+        # Listen for entity registry changes to detect switch renames
+        from homeassistant.helpers.event import async_track_entity_registry_updated_event
+        
+        async def _entity_registry_updated(event):
+            """Handle entity registry updates."""
+            # Re-link if entities in our device changed
+            if event.data.get("action") in ["update", "create"]:
+                old_switch = self._compact_view_switch_entity_id
+                self._setup_switch_listener()
+                if old_switch != self._compact_view_switch_entity_id:
+                    _LOGGER.info("Switch entity ID changed from %s to %s, re-linked automatically", 
+                                old_switch, self._compact_view_switch_entity_id)
+        
+        self.async_on_remove(
+            async_track_entity_registry_updated_event(
+                self.hass, self.entity_id, _entity_registry_updated
+            )
+        )
+    
+    def _setup_switch_listener(self):
+        """Find the switch entity and set up state change listener."""
         from homeassistant.helpers import entity_registry as er
         from homeassistant.helpers.event import async_track_state_change_event
         
@@ -692,8 +715,10 @@ class NorwayAlertsSensor(CoordinatorEntity, SensorEntity):
                 _LOGGER.info("✓ Compact view toggle ready for %s -> %s", self.entity_id, switch_entity_id)
             else:
                 _LOGGER.warning("Could not find compact view switch in device %s", device_id)
+                self._compact_view_switch_entity_id = None
         else:
             _LOGGER.warning("Could not determine device_id for sensor %s", self.entity_id)
+            self._compact_view_switch_entity_id = None
     
     def _add_metalert_attributes(self, alert_dict: dict, alert: dict) -> None:
         """Add MetAlerts-specific attributes to alert dict."""
